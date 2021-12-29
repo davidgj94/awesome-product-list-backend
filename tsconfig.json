@@ -15,6 +15,7 @@
     "paths": {
       "database/*": ["src/database/*"],
       "controller/*": ["src/controller/*"],
+      "core/*": ["src/core/*"],
       "config": ["src/config/index.ts"]
     }
   }

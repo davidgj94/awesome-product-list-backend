@@ -5,6 +5,7 @@ import http from "http";
 
 import config from "config";
 import router from "./routes";
+import { errorHandler, notFoundMiddleware } from "controller/utils";
 import { initDatabase } from "./database";
 
 // Init express
@@ -20,6 +21,12 @@ app.use(bodyParser.json());
 
 // Routes
 app.use("/api/v1/", router);
+
+// Catch 404 and forward to error handler
+app.use(notFoundMiddleware);
+
+// Add error handler
+app.use(errorHandler);
 
 (async () => {
   await initDatabase(config.MAX_RETRIES);
