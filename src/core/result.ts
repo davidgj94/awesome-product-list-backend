@@ -1,4 +1,4 @@
-export type Result<T, E> = Ok<T, E> | Err<T, E>;
+export type Result<T, E = Error> = Ok<T, E> | Err<T, E>;
 
 export class Ok<T, E> {
   public constructor(public readonly value: T) {}

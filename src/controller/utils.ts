@@ -58,9 +58,9 @@ export const controllerWrapper = function <
 >(
   validations: ValidationChain[],
   controller: Controller<QueryType, BodyType, ValueType>
-): RequestHandler {
+) {
   const validateRequest = validation(validations);
-  return async (req, res, next) => {
+  let requestHandler: RequestHandler = async (req, res, next) => {
     const errors = await validateRequest(req);
     if (!errors.isEmpty()) {
       return res
@@ -76,4 +76,5 @@ export const controllerWrapper = function <
       next(result.error);
     }
   };
+  return Object.assign(requestHandler, { validateRequest, controller });
 };
