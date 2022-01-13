@@ -1,10 +1,19 @@
 import { Model } from "mongoose";
 import { merge } from "lodash";
 
-function createFactory<T>(factoryModel: Model<T>, defaultFields: Partial<T>) {
-  return (overwriteFields?: typeof defaultFields) => {
+type DefaultFieldsFunc<T> = () => Promise<Partial<T>>;
+
+function createFactory<T>(
+  factoryModel: Model<T>,
+  defaultFieldsFunc?: DefaultFieldsFunc<T>
+) {
+  return async (overwriteFields?: Partial<T>) => {
+    const defaultFields = defaultFieldsFunc
+      ? await defaultFieldsFunc()
+      : ({} as Partial<T>);
     const document = new factoryModel(merge(defaultFields, overwriteFields));
-    return document.save();
+    await document.save();
+    return document;
   };
 }
 
