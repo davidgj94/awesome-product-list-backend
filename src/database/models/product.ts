@@ -18,17 +18,10 @@ interface ProductModel extends Model<IProduct, {}, ProductInstanceMethods> {
   ): PopulatedProductDocument[];
 }
 
-const averageVolume = (
-  newVolume: number,
-  oldVolume: number,
-  alfa = 0.9
-): number => alfa * newVolume + (1 - alfa) * oldVolume;
+export type UpdateVolumeFunc = (newVolume: number, oldVolume: number) => number;
 
 interface ProductInstanceMethods {
-  updateProductVolume(
-    newVolume: number,
-    updateFunc?: typeof averageVolume
-  ): void;
+  updateProductVolume(newVolume: number, updateFunc: UpdateVolumeFunc): void;
 }
 
 export type ProductDocument = ModelDocument<IProduct>;
@@ -54,7 +47,7 @@ ProductSchema.index({ lastOrderDate: -1, volume: 1 });
 ProductSchema.methods.updateProductVolume = function (
   this: ProductDocument,
   newVolume: number,
-  updateFunc: typeof averageVolume = averageVolume
+  updateFunc: UpdateVolumeFunc
 ) {
   this.volume = updateFunc(newVolume, this.volume);
 };
