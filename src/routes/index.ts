@@ -1,10 +1,9 @@
 import express from "express";
 
-import { echoController, errorController } from "controller/test";
+import testRouter from "./test.route";
 
 const router = express.Router();
 
-router.get("/test/echo", echoController);
-router.post("/test/error", errorController);
+router.use("/test", testRouter);
 
 export default router;
