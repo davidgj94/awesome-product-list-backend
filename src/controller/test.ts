@@ -24,5 +24,5 @@ export const echoController = controllerWrapper<IEchoQuery, {}, string>(
 );
 
 export const errorController = controllerWrapper([], (req) =>
-  err(new ServerError(StatusCode.TEMPORARILY_UNAVAILABLE, "Not available"))
+  err(new ServerError(StatusCode.UNAUTHORIZED, "Not available"))
 );

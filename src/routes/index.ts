@@ -5,6 +5,6 @@ import { echoController, errorController } from "controller/test";
 const router = express.Router();
 
 router.get("/test/echo", echoController);
-router.get("/test/error", errorController);
+router.post("/test/error", errorController);
 
 export default router;
