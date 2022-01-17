@@ -11,4 +11,8 @@ export default {
   MAX_RETRIES: 3,
   VOLUME_UPDATE_RATE: 0.9,
   VOLUME_INTERVAL_HOURS: 5,
+  JWT_SECRET: process.env.JWT_SECRET || "asdf",
+  JWT_EXPIRES_DAYS: process.env.JWT_EXPIRES_DAYS
+    ? Number(process.env.JWT_EXPIRES_DAYS)
+    : 7,
 };
