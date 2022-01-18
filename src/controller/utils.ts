@@ -18,10 +18,13 @@ export const enum StatusCode {
 export class ServerError extends Error {
   public errorCode: StatusCode;
 
-  constructor(errorCode: StatusCode, message: string) {
-    super(message);
+  constructor(errorCode: StatusCode, message?: any) {
+    super(message || "");
     this.errorCode = errorCode;
   }
+
+  static isServerError = (err: ServerError | Error): err is ServerError =>
+    (err as ServerError).errorCode !== undefined;
 }
 
 interface ServerResult<T> {
@@ -29,10 +32,18 @@ interface ServerResult<T> {
   value: T;
 }
 
+export const validationMiddleware: RequestHandler = async (req, res, next) => {
+  const errResult = validationResult(req);
+  if (!errResult.isEmpty())
+    return next(
+      new ServerError(StatusCode.BAD_REQUEST, errResult.array().join(" "))
+    );
+};
+
 export const errorHandler: ErrorRequestHandler = (err: Error, req, res, _) => {
   res
     .status((err as ServerError).errorCode || StatusCode.INTERNAL_SERVER_ERROR)
-    .send({ error: err.message });
+    .json(err.message);
   // tslint:disable-next-line: no-console
   console.log(err);
 };
@@ -42,9 +53,23 @@ export const notFoundMiddleware: RequestHandler = async (req, res, next) => {
   next(err);
 };
 
+export const protectController =
+  (requestHandler: RequestHandler): RequestHandler =>
+  async (req, res, next) => {
+    const errResult = validationResult(req);
+    if (!errResult.isEmpty())
+      return next(
+        new ServerError(
+          StatusCode.BAD_REQUEST,
+          JSON.stringify(errResult.array())
+        )
+      );
+    requestHandler(req, res, next);
+  };
+
 type Controller<QueryType, BodyType, ValueType> = (
   req: Request<{}, {}, BodyType, QueryType>
-) => Result<ServerResult<ValueType>, ServerError>;
+) => Promise<ServerResult<ValueType>>;
 
 const validation = (validations: ValidationChain[]) => async (req: Request) => {
   await Promise.all(validations.map((validation) => validation.run(req)));
@@ -61,19 +86,16 @@ export const controllerWrapper = function <
 ) {
   const validateRequest = validation(validations);
   let requestHandler: RequestHandler = async (req, res, next) => {
-    const errors = await validateRequest(req);
-    if (!errors.isEmpty()) {
-      return res
-        .status(StatusCode.BAD_REQUEST)
-        .json({ errors: errors.array() });
-    }
-    const result = await controller(
-      req as unknown as Request<{}, {}, BodyType, QueryType>
-    );
-    if (result.isOk()) {
-      res.status(result.value.statusCode).json(result.value.value);
-    } else {
-      next(result.error);
+    try {
+      const errResults = await validateRequest(req);
+      if (!errResults.isEmpty())
+        throw new ServerError(StatusCode.BAD_REQUEST, errResults.array());
+      const result = await controller(
+        req as unknown as Request<{}, {}, BodyType, QueryType>
+      );
+      res.status(result.statusCode).json(result.value);
+    } catch (error) {
+      next(error);
     }
   };
   return Object.assign(requestHandler, { validateRequest, controller });

@@ -14,15 +14,15 @@ export const echoController = controllerWrapper<IEchoQuery, {}, string>(
     query("text").isString().trim('"'),
     query("repeat").default(1).isNumeric().toInt(),
   ],
-  (req) => {
+  async (req) => {
     const { text, repeat } = req.query;
-    return ok({
+    return {
       value: _.repeat(text, repeat),
       statusCode: StatusCode.SUCCESS,
-    });
+    };
   }
 );
 
-export const errorController = controllerWrapper([], (req) =>
-  err(new ServerError(StatusCode.UNAUTHORIZED, "Not available"))
-);
+export const errorController = controllerWrapper([], async (req) => {
+  throw new ServerError(StatusCode.UNAUTHORIZED, "Unauthorized");
+});

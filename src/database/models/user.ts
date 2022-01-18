@@ -18,7 +18,7 @@ interface UserInstanceMethods {
 export type UserDocument = ModelDocument<IUser>;
 
 const UserSchema = new Schema<IUser, UserModel>({
-  email: String,
+  email: { type: String, unique: true },
   password: String,
   favProducts: [
     {
