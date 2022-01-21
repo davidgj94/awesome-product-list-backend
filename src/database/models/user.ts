@@ -13,6 +13,7 @@ interface UserModel extends Model<IUser, {}, UserInstanceMethods> {}
 
 interface UserInstanceMethods {
   validatePassword(password: string): boolean;
+  toggleFav(productId: string): void;
 }
 
 export type UserDocument = ModelDocument<IUser>;
@@ -34,6 +35,20 @@ UserSchema.methods.validatePassword = function (
   password: string
 ) {
   return compareSync(password, this.password);
+};
+
+UserSchema.methods.toggleFav = function (
+  this: UserDocument,
+  productId: string
+) {
+  const productObjectId = new Types.ObjectId(productId);
+  if (this.favProducts.some((id) => id.equals(productObjectId))) {
+    this.favProducts = this.favProducts.filter(
+      (id) => !id.equals(productObjectId)
+    );
+    return;
+  }
+  this.favProducts.push(productObjectId);
 };
 
 UserSchema.pre<UserDocument>("save", function (this, next) {
