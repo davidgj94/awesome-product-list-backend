@@ -1,8 +1,6 @@
 import { ErrorRequestHandler, Request, RequestHandler } from "express";
 import { ValidationChain, validationResult } from "express-validator";
 
-import { Result } from "core/result";
-
 export const enum StatusCode {
   SUCCESS = 200,
   CREATED = 201,
@@ -32,14 +30,6 @@ interface ServerResult<T> {
   value: T;
 }
 
-export const validationMiddleware: RequestHandler = async (req, res, next) => {
-  const errResult = validationResult(req);
-  if (!errResult.isEmpty())
-    return next(
-      new ServerError(StatusCode.BAD_REQUEST, errResult.array().join(" "))
-    );
-};
-
 export const errorHandler: ErrorRequestHandler = (err: Error, req, res, _) => {
   res
     .status((err as ServerError).errorCode || StatusCode.INTERNAL_SERVER_ERROR)
@@ -67,8 +57,10 @@ export const protectController =
     requestHandler(req, res, next);
   };
 
-type Controller<QueryType, BodyType, ValueType> = (
-  req: Request<{}, {}, BodyType, QueryType>
+type Controller<QueryType, BodyType, ValueType, UserType> = (
+  req: Request<{ [key: string]: string }, {}, BodyType, QueryType> & {
+    user: UserType;
+  }
 ) => Promise<ServerResult<ValueType>>;
 
 const validation = (validations: ValidationChain[]) => async (req: Request) => {
@@ -79,10 +71,11 @@ const validation = (validations: ValidationChain[]) => async (req: Request) => {
 export const controllerWrapper = function <
   QueryType = {},
   BodyType = {},
-  ValueType = {}
+  ValueType = {},
+  UserType = never
 >(
   validations: ValidationChain[],
-  controller: Controller<QueryType, BodyType, ValueType>
+  controller: Controller<QueryType, BodyType, ValueType, UserType>
 ) {
   const validateRequest = validation(validations);
   let requestHandler: RequestHandler = async (req, res, next) => {
@@ -90,9 +83,7 @@ export const controllerWrapper = function <
       const errResults = await validateRequest(req);
       if (!errResults.isEmpty())
         throw new ServerError(StatusCode.BAD_REQUEST, errResults.array());
-      const result = await controller(
-        req as unknown as Request<{}, {}, BodyType, QueryType>
-      );
+      const result = await controller(req as any);
       res.status(result.statusCode).json(result.value);
     } catch (error) {
       next(error);
