@@ -15,7 +15,7 @@ interface ProductModel extends Model<IProduct, {}, ProductInstanceMethods> {
     timeLimit: Date,
     skip?: number,
     limit?: number
-  ): PopulatedProductDocument[];
+  ): Promise<PopulatedProductDocument[]>;
 }
 
 export type UpdateVolumeFunc = (newVolume: number, oldVolume: number) => number;
